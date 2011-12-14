@@ -31,6 +31,7 @@ import android.preference.PreferenceScreen;
 import android.provider.Settings;
 
 import com.cyanogenmod.cmparts.R;
+import com.cyanogenmod.cmparts.provider.FlingerPinger;
 
 public class UIActivity extends PreferenceActivity implements OnPreferenceChangeListener {
 
@@ -166,7 +167,7 @@ public class UIActivity extends PreferenceActivity implements OnPreferenceChange
 
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         if (preference == mRenderEffectPref) {
-            writeRenderEffect(Integer.valueOf((String) newValue));
+            FlingerPinger.writeRenderEffect(Integer.valueOf((String) newValue));
             return true;
         } else if (preference == mOverscrollPref) {
             int overscrollEffect = Integer.valueOf((String) newValue);
@@ -182,49 +183,10 @@ public class UIActivity extends PreferenceActivity implements OnPreferenceChange
         return false;
     }
 
-    // Taken from DevelopmentSettings
     private void updateFlingerOptions() {
-        // magic communication with surface flinger.
-        try {
-            IBinder flinger = ServiceManager.getService("SurfaceFlinger");
-            if (flinger != null) {
-                Parcel data = Parcel.obtain();
-                Parcel reply = Parcel.obtain();
-                data.writeInterfaceToken("android.ui.ISurfaceComposer");
-                flinger.transact(1010, data, reply, 0);
-                int v;
-                v = reply.readInt();
-                // mShowCpuCB.setChecked(v != 0);
-                v = reply.readInt();
-                // mEnableGLCB.setChecked(v != 0);
-                v = reply.readInt();
-                // mShowUpdatesCB.setChecked(v != 0);
-                v = reply.readInt();
-                // mShowBackgroundCB.setChecked(v != 0);
-
-                v = reply.readInt();
-                mRenderEffectPref.setValue(String.valueOf(v));
-
-                reply.recycle();
-                data.recycle();
-            }
-        } catch (RemoteException ex) {
-        }
-
-    }
-
-    private void writeRenderEffect(int id) {
-        try {
-            IBinder flinger = ServiceManager.getService("SurfaceFlinger");
-            if (flinger != null) {
-                Parcel data = Parcel.obtain();
-                data.writeInterfaceToken("android.ui.ISurfaceComposer");
-                data.writeInt(id);
-                flinger.transact(1014, data, null, 0);
-                data.recycle();
-            }
-        } catch (RemoteException ex) {
-        }
+        int v = FlingerPinger.readRenderEffect();
+        if (v >= 0 )
+            mRenderEffectPref.setValue(String.valueOf(v));
     }
 
     ColorPickerDialog.OnColorChangedListener mWidgetColorListener = new ColorPickerDialog.OnColorChangedListener() {
